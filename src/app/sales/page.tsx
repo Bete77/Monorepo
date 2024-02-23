@@ -1,23 +1,37 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { Sales } from "@/models/sales.model";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const Page = () => {
-  const [item, setItem] = useState("");
-  const [description, setDescription] = useState("");
-  const [quantity, setQuantity] = useState(0);
-  const [unitPrice, setUnitPrice] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const schema = z.object({
+    item: z.string().min(2).max(50),
+    description: z.string().optional(),
+    quantity: z.number().min(1),
+    unitPrice: z.number().min(0.01),
+    totalPrice: z.number(),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<SalesData>({
+    resolver: zodResolver(schema),
+  });
 
   useEffect(() => {
-    setTotalPrice(quantity * unitPrice);
-  }, [quantity, unitPrice]);
+    setValue("totalPrice", watch("quantity") * watch("unitPrice"));
+  }, [watch("quantity"), watch("unitPrice")]);
 
-  const handleCreate = () => {
-    if (!item || quantity === 0 || unitPrice === 0) {
-        window.alert("Please make sure all fields are filled in correctly Except Description and Total Price.");
-        return;
-    }
-    console.log({ item, description, quantity, unitPrice, totalPrice });
+  type SalesData = z.infer<typeof schema>;
+
+  const submitData = (data: SalesData) => {
+    console.log("IT WORKED", data);
   };
 
   return (
@@ -37,71 +51,92 @@ const Page = () => {
                   </p>
                 </div>
               </div>
-              <div className="divide-y divide-gray-200">
-                <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-                  <div className="flex flex-col">
-                    <label className="leading-loose">Item *</label>
-                    <input
-                      type="text"
-                      className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
-                      placeholder="Bowl"
-                      onChange={(e) => setItem(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="leading-loose">Description (Optional)</label>
-                    <input
-                      type="text"
-                      className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
-                      placeholder="Red Green Yellow Blue Rounded"
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="leading-loose">Quantity *</label>
-                    <input
-                      type="number"
-                      className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
-                      placeholder="10000"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value))}
-                      required
-                    />
-                  </div>
+              <form onSubmit={handleSubmit(submitData)}>
+                <div className="divide-y divide-gray-200">
+                  <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                    <div className="flex flex-col">
+                      <label className="leading-loose">Item *</label>
+                      <input
+                        type="text"
+                        className={`px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600 ${
+                          errors.item ? "border-red-500" : ""
+                        }`}
+                        placeholder="Bowl"
+                        {...register("item")}
+                      />
+                      {errors.item && (
+                        <span className="text-red-500">
+                          {errors.item.message}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="leading-loose">
+                        Description (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
+                        placeholder="Red Green Yellow Blue Rounded"
+                        {...register("description")}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="leading-loose">Quantity *</label>
+                      <input
+                        type="number"
+                        className={`px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600 ${
+                          errors.quantity ? "border-red-500" : ""
+                        }`}
+                        placeholder="10000"
+                        {...register("quantity", { valueAsNumber: true })}
+                      />
+                      {errors.quantity && (
+                        <span className="text-red-500">
+                          {errors.quantity.message}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="flex flex-col">
-                    <label className="leading-loose">Unit Price *</label>
-                    <input
-                      type="text"
-                      className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
-                      placeholder="2.5"
-                      value={unitPrice}
-                      onChange={(e) => setUnitPrice(parseFloat(e.target.value))}
-                      required
-                    />
-                  </div>
+                    <div className="flex flex-col">
+                      <label className="leading-loose">Unit Price *</label>
+                      <input
+                        type="number"
+                        className={`px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600 ${
+                          errors.unitPrice ? "border-red-500" : ""
+                        }`}
+                        placeholder="2.5"
+                        {...register("unitPrice", { valueAsNumber: true })}
+                      />
+                      {errors.unitPrice && (
+                        <span className="text-red-500">
+                          {errors.unitPrice.message}
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="flex flex-col">
-                    <label className="leading-loose">Total Price (Read Only)</label>
-                    <input
-                      type="text"
-                      className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
-                      placeholder="100000"
-                      value={totalPrice}
-                      disabled
-                    />
+                    <div className="flex flex-col">
+                      <label className="leading-loose">
+                        Total Price (Read Only)
+                      </label>
+                      <input
+                        type="text"
+                        className="px-4 py-2 border focus:ring-gray-500 focus:border-gray-900 w-full sm:text-sm dark:border-slate-800 rounded-md focus:outline-none text-gray-600"
+                        placeholder="100000"
+                        readOnly
+                        {...register("totalPrice", { valueAsNumber: true }) }/>
+                    </div>
+                  </div>
+                  <div className="pt-4 flex items-center space-x-4">
+                    <button
+                      type="submit"
+                      className="dark:bg-slate-800 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none"
+                    >
+                      Create
+                    </button>
                   </div>
                 </div>
-                <div className="pt-4 flex items-center space-x-4">
-                  <button
-                    onClick={handleCreate}
-                    className="dark:bg-slate-800 flex justify-center items-center w-full text-white px-4 py-3 rounded-md focus:outline-none"
-                  >
-                    Create
-                  </button>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>
